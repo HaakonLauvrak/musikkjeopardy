@@ -92,67 +92,55 @@
   .chip:hover { color: var(--gold); border-color: var(--gold) }
   .chip.danger:hover, .chip.armed { color: #ff5470; border-color: #ff5470 }
 
-  /* ── Category picker ────────────────────── */
-  #cats {
+  /* ── Category intro ─────────────────────── */
+  #intro {
     flex: 1;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: clamp(10px, 1.6vh, 18px);
-    align-content: center;
-  }
-  .cat-card {
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: clamp(6px, 1.4vh, 14px);
-    min-height: clamp(150px, 26vh, 260px);
-    background: linear-gradient(180deg, #171b36, #0d1022);
-    border: 1px solid var(--panel-edge);
-    border-radius: 18px;
-    padding: clamp(14px, 2.4vh, 26px);
-    cursor: pointer;
-    color: var(--text);
-    font-family: var(--body);
-    transition: transform .2s, border-color .2s, box-shadow .2s;
-    opacity: 0;
-    animation: tile-in .55s cubic-bezier(.2,.7,.3,1.1) forwards;
-    animation-delay: calc(var(--i) * 70ms);
+    gap: clamp(16px, 3.6vh, 38px);
+    padding-bottom: 6vh;
   }
-  @keyframes tile-in {
-    from { opacity: 0; transform: perspective(900px) rotateX(-40deg) translateY(14px); }
-    to   { opacity: 1; transform: none; }
-  }
-  .cat-card:hover, .cat-card:focus-visible {
-    transform: translateY(-4px);
-    border-color: var(--gold);
-    box-shadow: 0 14px 44px rgba(246,201,69,.14);
-    outline: none;
-  }
-  .cat-card .num {
-    font-family: var(--display);
-    font-size: clamp(1rem, 2.4vh, 1.5rem);
+  #intro.open { display: flex }
+  #intro .eyebrow {
     color: var(--violet);
-    letter-spacing: .1em;
+    letter-spacing: .34em;
+    text-transform: uppercase;
+    font-size: clamp(.75rem, 1.8vh, 1.05rem);
+    animation: rise .6s ease both;
   }
-  .cat-card .name {
+  #intro .cat-name {
     font-family: var(--display);
     font-weight: 400;
-    font-size: clamp(1.3rem, 3.4vh, 2.1rem);
-    letter-spacing: .05em;
-    color: var(--gold);
+    font-size: clamp(1.4rem, 4.6vh, 3rem);
+    letter-spacing: .12em;
     text-transform: uppercase;
-  }
-  .cat-card .q { color: var(--text-dim); font-size: clamp(.85rem, 1.9vh, 1.05rem) }
-  .cat-card .done-tag {
     color: var(--text-dim);
-    border: 1px solid var(--panel-edge);
-    border-radius: 999px;
-    padding: 3px 12px;
-    font-size: .78rem;
+    animation: rise .6s .1s ease both;
   }
-  .cat-card.done { opacity: .5 !important }
+  #intro .cat-q {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 9vh, 5.6rem);
+    line-height: 1.05;
+    letter-spacing: .03em;
+    color: var(--gold);
+    text-shadow: 0 0 50px rgba(246,201,69,.35);
+    max-width: 20ch;
+    animation: rise .6s .2s ease both;
+  }
+  #intro .cat-note {
+    color: var(--text-dim);
+    font-size: clamp(.85rem, 2vh, 1.1rem);
+    animation: rise .6s .3s ease both;
+  }
+  #intro .actions { display: flex; gap: 12px; animation: rise .6s .4s ease both }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(18px) }
+    to   { opacity: 1; transform: none }
+  }
 
   /* ── List / reveal view ─────────────────── */
   #list-view { flex: 1; display: none; flex-direction: column; gap: clamp(8px, 1.6vh, 16px); min-height: 0 }
@@ -167,6 +155,7 @@
     line-height: 1.15;
   }
   #list-note { text-align: center; color: var(--text-dim); font-size: clamp(.75rem, 1.7vh, .95rem) }
+  #list-note:empty { display: none }
 
   #rows {
     flex: 1;
@@ -235,6 +224,30 @@
     to   { transform: none; filter: none }
   }
 
+  /* ── End screen ─────────────────────────── */
+  #end {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: clamp(16px, 3.6vh, 38px);
+    padding-bottom: 6vh;
+  }
+  #end.open { display: flex }
+  #end .big {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(3rem, 12vh, 7rem);
+    color: var(--gold);
+    text-shadow: 0 0 60px rgba(246,201,69,.4);
+    letter-spacing: .04em;
+    animation: rise .6s ease both;
+  }
+  #end .sub { color: var(--text-dim); font-size: clamp(1rem, 2.4vh, 1.3rem); animation: rise .6s .15s ease both }
+  #end .actions { display: flex; gap: 12px; animation: rise .6s .3s ease both }
+
   #list-controls {
     display: flex;
     justify-content: center;
@@ -263,7 +276,10 @@
     border-color: transparent;
   }
   .btn.gold:hover { box-shadow: 0 8px 26px rgba(246,201,69,.3) }
-  .btn.gold:disabled { filter: grayscale(.6) brightness(.7); cursor: default; transform: none; box-shadow: none }
+  .btn.big {
+    font-size: clamp(1rem, 2.4vh, 1.3rem);
+    padding: clamp(12px, 2vh, 18px) clamp(26px, 3vw, 44px);
+  }
   .btn.ghost { background: none; color: var(--text-dim) }
   .btn.ghost:hover { color: var(--text) }
 
@@ -276,7 +292,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important }
-    .cat-card { opacity: 1 }
   }
 </style>
 </head>
@@ -285,22 +300,39 @@
   <header>
     <a class="chip" href="./">‹ Alle spill</a>
     <h1>TOPP 10</h1>
-    <span class="tagline" id="tagline">Gjett dypt – lengre ned på lista gir flere poeng</span>
+    <span class="tagline">Gjett dypt – lengre ned på lista gir flere poeng</span>
     <span class="spacer"></span>
     <button class="chip danger" id="reset-btn">Nullstill</button>
   </header>
 
-  <main id="cats"></main>
+  <section id="intro">
+    <div class="eyebrow" id="intro-eyebrow"></div>
+    <div class="cat-name" id="intro-name"></div>
+    <div class="cat-q" id="intro-q"></div>
+    <div class="cat-note" id="intro-note"></div>
+    <div class="rule">Riktig gjett på plass <b>1</b> gir <b>1 poeng</b> … plass <b>10</b> gir <b>10 poeng</b>. Utenfor topp 10? <b>0 poeng.</b></div>
+    <div class="actions">
+      <button class="btn ghost" id="intro-prev">‹ Forrige</button>
+      <button class="btn gold big" id="intro-next">Neste →</button>
+    </div>
+  </section>
 
   <section id="list-view">
     <h2 id="question"></h2>
     <div id="list-note"></div>
     <div id="rows"></div>
-    <div class="rule">Riktig gjett på plass <b>1</b> gir <b>1 poeng</b> … plass <b>10</b> gir <b>10 poeng</b>. Utenfor topp 10? <b>0 poeng.</b></div>
     <div id="list-controls">
-      <button class="btn ghost" id="back-btn">‹ Kategorier</button>
-      <button class="btn gold" id="next-btn">Avslør neste</button>
-      <button class="btn ghost" id="all-btn">Avslør alle</button>
+      <button class="btn ghost" id="back-btn">‹ Kategori</button>
+      <button class="btn gold big" id="next-btn"></button>
+    </div>
+  </section>
+
+  <section id="end">
+    <div class="big">Det var alt!</div>
+    <div class="sub">Tell opp poengene – hvem gjettet dypest?</div>
+    <div class="actions">
+      <button class="btn ghost" id="end-prev">‹ Forrige</button>
+      <a class="btn gold big" href="./">Til forsiden</a>
     </div>
   </section>
 </div>
@@ -367,6 +399,7 @@ const LISTS = [
     name: "Instagram – i rommet",
     q: "Hvem i rommet har flest følgere på Instagram?",
     note: "Hele lista avsløres – alle 20!",
+    revealRest: 10, // reveal one-by-one down to here, then the rest in one click
     items: [
       { r: 1,  n: "Maria",       d: "1500" },
       { r: 2,  n: "Anne",        d: "1126" },
@@ -394,7 +427,7 @@ const LISTS = [
     key: "toppscorere",
     name: "Norske toppscorere",
     q: "Hvem har scoret flest mål for Norges herrelandslag?",
-    note: "Menn – antall mål i parentes",
+    note: "Menn – antall mål vises ved avsløring",
     items: [
       { r: 1,  n: "Erling Braut Haaland", d: "55 mål" },
       { r: 2,  n: "Jørgen Juve",          d: "33 mål" },
@@ -410,68 +443,63 @@ const LISTS = [
   },
 ];
 
-const STORAGE_KEY = "topp10-v1";
+const STORAGE_KEY = "topp10-v2";
 
-// state.rev[key] = number of rows revealed so far (from the bottom of the list up)
-let state = { rev: {} };
-let currentList = null;
+// step: which list; phase: "intro" | "list" | "end"; rev[key]: rows revealed top-down
+let state = { step: 0, phase: "intro", rev: {} };
 
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
 }
 try {
   const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
-  if (s && s.rev) state = s;
+  if (s && typeof s.step === "number" && s.rev) state = s;
 } catch (e) {}
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 }
 
-// ── Category picker ────────────────────────────────────────
-const catsEl = document.getElementById("cats");
-const listView = document.getElementById("list-view");
-
-function renderCats() {
-  catsEl.style.display = "";
-  listView.classList.remove("open");
-  catsEl.innerHTML = "";
-  LISTS.forEach((list, i) => {
-    const done = (state.rev[list.key] || 0) >= list.items.length;
-    const el = document.createElement("button");
-    el.className = "cat-card" + (done ? " done" : "");
-    el.style.setProperty("--i", i);
-    el.innerHTML =
-      `<span class="num">${i + 1} / ${LISTS.length}</span>` +
-      `<span class="name">${esc(list.name)}</span>` +
-      `<span class="q">${esc(list.q)}</span>` +
-      (done ? `<span class="done-tag">Ferdig avslørt</span>` : "");
-    el.addEventListener("click", () => openList(list));
-    catsEl.appendChild(el);
-  });
-}
-
-// ── List view ──────────────────────────────────────────────
+// ── Views ──────────────────────────────────────────────────
+const introEl = document.getElementById("intro");
+const listEl = document.getElementById("list-view");
+const endEl = document.getElementById("end");
 const rowsEl = document.getElementById("rows");
 const nextBtn = document.getElementById("next-btn");
 
-function openList(list) {
-  currentList = list;
-  catsEl.style.display = "none";
-  listView.classList.add("open");
+function render() {
+  introEl.classList.toggle("open", state.phase === "intro");
+  listEl.classList.toggle("open", state.phase === "list");
+  endEl.classList.toggle("open", state.phase === "end");
+  if (state.phase === "intro") renderIntro();
+  if (state.phase === "list") renderList();
+  save();
+}
+
+function renderIntro() {
+  const list = LISTS[state.step];
+  document.getElementById("intro-eyebrow").textContent = `Kategori ${state.step + 1} av ${LISTS.length}`;
+  document.getElementById("intro-name").textContent = list.name;
+  document.getElementById("intro-q").textContent = list.q;
+  document.getElementById("intro-note").textContent = list.note;
+  document.getElementById("intro-prev").style.visibility = state.step === 0 ? "hidden" : "visible";
+  // restart the entrance animation
+  introEl.querySelectorAll(".eyebrow, .cat-name, .cat-q, .cat-note, .actions").forEach(el => {
+    el.style.animation = "none";
+    void el.offsetWidth;
+    el.style.animation = "";
+  });
+}
+
+function renderList() {
+  const list = LISTS[state.step];
+  const revealed = state.rev[list.key] || 0;
   document.getElementById("question").textContent = list.q;
   document.getElementById("list-note").textContent = list.note;
   rowsEl.className = list.items.length > 10 ? "cols-2" : "cols-1";
-  renderRows();
-}
-
-function renderRows() {
-  const list = currentList;
-  const revealed = state.rev[list.key] || 0;
   rowsEl.innerHTML = "";
   list.items.forEach((item, i) => {
-    // rows reveal bottom-up: the last `revealed` rows are open
-    const isOpen = i >= list.items.length - revealed;
+    const isOpen = i < revealed; // top-down: first `revealed` rows are open
     const el = document.createElement("div");
     el.className = "row" + (isOpen ? " revealed" : "") + (item.r === 1 ? " top1" : "");
     el.innerHTML = isOpen
@@ -480,35 +508,64 @@ function renderRows() {
       : `<span class="rank">${item.r}</span><span class="mystery"><i></i></span>`;
     rowsEl.appendChild(el);
   });
-  const left = list.items.length - revealed;
-  nextBtn.disabled = left === 0;
-  nextBtn.textContent = left === 0 ? "Alt avslørt!" : `Avslør plass ${list.items[left - 1].r}`;
+
+  if (revealed < list.items.length) {
+    if (list.revealRest && revealed >= list.revealRest) {
+      nextBtn.textContent = `Avslør resten (${list.items[revealed].r}–${list.items[list.items.length - 1].r})`;
+    } else {
+      nextBtn.textContent = `Avslør plass ${list.items[revealed].r}`;
+    }
+  } else {
+    nextBtn.textContent = state.step === LISTS.length - 1 ? "Ferdig →" : "Neste kategori →";
+  }
 }
 
-nextBtn.addEventListener("click", () => {
-  const list = currentList;
-  const revealed = state.rev[list.key] || 0;
-  if (revealed >= list.items.length) return;
-  state.rev[list.key] = revealed + 1;
-  save();
-  renderRows();
+// ── Actions ────────────────────────────────────────────────
+document.getElementById("intro-next").addEventListener("click", () => {
+  state.phase = "list";
+  render();
 });
-
-document.getElementById("all-btn").addEventListener("click", () => {
-  state.rev[currentList.key] = currentList.items.length;
-  save();
-  renderRows();
+document.getElementById("intro-prev").addEventListener("click", () => {
+  if (state.step === 0) return;
+  state.step--;
+  state.phase = "list";
+  render();
 });
-
 document.getElementById("back-btn").addEventListener("click", () => {
-  currentList = null;
-  renderCats();
+  state.phase = "intro";
+  render();
+});
+document.getElementById("end-prev").addEventListener("click", () => {
+  state.step = LISTS.length - 1;
+  state.phase = "list";
+  render();
+});
+
+nextBtn.addEventListener("click", () => {
+  const list = LISTS[state.step];
+  const revealed = state.rev[list.key] || 0;
+  if (revealed < list.items.length) {
+    if (list.revealRest && revealed >= list.revealRest) {
+      state.rev[list.key] = list.items.length;       // the rest in one click
+    } else {
+      state.rev[list.key] = revealed + 1;            // one by one, from the top
+    }
+  } else if (state.step === LISTS.length - 1) {
+    state.phase = "end";
+  } else {
+    state.step++;
+    state.phase = "intro";
+  }
+  render();
 });
 
 document.addEventListener("keydown", e => {
-  if (!currentList) return;
-  if (e.key === "Escape") { currentList = null; renderCats(); }
-  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nextBtn.click(); }
+  if (e.key === "Enter" || e.key === " ") {
+    if (e.target.tagName === "BUTTON" || e.target.tagName === "A") return;
+    e.preventDefault();
+    if (state.phase === "intro") document.getElementById("intro-next").click();
+    else if (state.phase === "list") nextBtn.click();
+  }
 });
 
 // ── Reset (two-step confirm) ───────────────────────────────
@@ -517,12 +574,10 @@ let resetTimer = null;
 resetBtn.addEventListener("click", () => {
   if (resetBtn.classList.contains("armed")) {
     clearTimeout(resetTimer);
-    state = { rev: {} };
-    save();
+    state = { step: 0, phase: "intro", rev: {} };
     resetBtn.classList.remove("armed");
     resetBtn.textContent = "Nullstill";
-    currentList = null;
-    renderCats();
+    render();
   } else {
     resetBtn.classList.add("armed");
     resetBtn.textContent = "Sikker? Trykk igjen";
@@ -533,7 +588,7 @@ resetBtn.addEventListener("click", () => {
   }
 });
 
-renderCats();
+render();
 </script>
 </body>
 </html>
