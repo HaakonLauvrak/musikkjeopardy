@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topp 10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #07080f;
+    --panel: #12152a;
+    --panel-edge: #232849;
+    --gold: #f6c945;
+    --gold-hot: #ffe08a;
+    --violet: #8b7cff;
+    --text: #f2f1ec;
+    --text-dim: #9a9cb5;
+    --display: "Anton", sans-serif;
+    --body: "Space Grotesk", sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--body);
+    background: var(--ink);
+    color: var(--text);
+    overflow: hidden;
+  }
+  body::before, body::after {
+    content: "";
+    position: fixed;
+    inset: -30%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    background: radial-gradient(ellipse 40% 50% at 18% 8%, rgba(139,124,255,.14), transparent 60%);
+    animation: drift-a 26s ease-in-out infinite alternate;
+  }
+  body::after {
+    background: radial-gradient(ellipse 45% 55% at 85% 92%, rgba(246,201,69,.10), transparent 60%);
+    animation: drift-b 32s ease-in-out infinite alternate;
+  }
+  @keyframes drift-a { to { transform: translate(6%, 4%) } }
+  @keyframes drift-b { to { transform: translate(-5%, -4%) } }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(10px, 1.8vh, 24px) clamp(14px, 2.4vw, 40px);
+    gap: clamp(10px, 1.8vh, 20px);
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-size: clamp(1.5rem, 3.2vh, 2.2rem);
+    letter-spacing: .06em;
+    color: var(--gold);
+    text-shadow: 0 0 24px rgba(246,201,69,.35);
+    font-weight: 400;
+  }
+  header .tagline {
+    color: var(--text-dim);
+    font-size: clamp(.75rem, 1.6vh, 1rem);
+  }
+  header .spacer { flex: 1 }
+  .chip {
+    font-family: var(--body);
+    font-size: .85rem;
+    color: var(--text-dim);
+    background: none;
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color .2s, border-color .2s;
+  }
+  .chip:hover { color: var(--gold); border-color: var(--gold) }
+  .chip.danger:hover, .chip.armed { color: #ff5470; border-color: #ff5470 }
+
+  /* ── Category picker ────────────────────── */
+  #cats {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: clamp(10px, 1.6vh, 18px);
+    align-content: center;
+  }
+  .cat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: clamp(6px, 1.4vh, 14px);
+    min-height: clamp(150px, 26vh, 260px);
+    background: linear-gradient(180deg, #171b36, #0d1022);
+    border: 1px solid var(--panel-edge);
+    border-radius: 18px;
+    padding: clamp(14px, 2.4vh, 26px);
+    cursor: pointer;
+    color: var(--text);
+    font-family: var(--body);
+    transition: transform .2s, border-color .2s, box-shadow .2s;
+    opacity: 0;
+    animation: tile-in .55s cubic-bezier(.2,.7,.3,1.1) forwards;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+  @keyframes tile-in {
+    from { opacity: 0; transform: perspective(900px) rotateX(-40deg) translateY(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .cat-card:hover, .cat-card:focus-visible {
+    transform: translateY(-4px);
+    border-color: var(--gold);
+    box-shadow: 0 14px 44px rgba(246,201,69,.14);
+    outline: none;
+  }
+  .cat-card .num {
+    font-family: var(--display);
+    font-size: clamp(1rem, 2.4vh, 1.5rem);
+    color: var(--violet);
+    letter-spacing: .1em;
+  }
+  .cat-card .name {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.3rem, 3.4vh, 2.1rem);
+    letter-spacing: .05em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .cat-card .q { color: var(--text-dim); font-size: clamp(.85rem, 1.9vh, 1.05rem) }
+  .cat-card .done-tag {
+    color: var(--text-dim);
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-size: .78rem;
+  }
+  .cat-card.done { opacity: .5 !important }
+
+  /* ── List / reveal view ─────────────────── */
+  #list-view { flex: 1; display: none; flex-direction: column; gap: clamp(8px, 1.6vh, 16px); min-height: 0 }
+  #list-view.open { display: flex }
+
+  #question {
+    text-align: center;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.4rem, 4.4vh, 2.9rem);
+    letter-spacing: .04em;
+    line-height: 1.15;
+  }
+  #list-note { text-align: center; color: var(--text-dim); font-size: clamp(.75rem, 1.7vh, .95rem) }
+
+  #rows {
+    flex: 1;
+    display: grid;
+    gap: clamp(4px, .9vh, 10px);
+    min-height: 0;
+    align-content: stretch;
+  }
+  #rows.cols-1 { grid-template-rows: repeat(10, 1fr) }
+  #rows.cols-2 { grid-template-rows: repeat(10, 1fr); grid-auto-flow: column; grid-template-columns: 1fr 1fr; column-gap: clamp(12px, 2vw, 28px) }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: clamp(10px, 1.4vw, 22px);
+    background: linear-gradient(180deg, #161a33, var(--panel));
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+    padding: 0 clamp(12px, 1.6vw, 26px);
+    min-height: 0;
+  }
+  .row .rank {
+    font-family: var(--display);
+    font-size: clamp(1rem, 3vh, 1.9rem);
+    color: var(--violet);
+    min-width: 2.2ch;
+    text-align: right;
+  }
+  .row .name {
+    font-weight: 700;
+    font-size: clamp(1rem, 2.9vh, 1.8rem);
+    letter-spacing: .01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row .detail {
+    margin-left: auto;
+    color: var(--text-dim);
+    font-size: clamp(.8rem, 2vh, 1.15rem);
+    white-space: nowrap;
+  }
+  .row .mystery {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .row .mystery i {
+    height: clamp(8px, 1.4vh, 12px);
+    flex: 1;
+    border-radius: 999px;
+    background: #1d2140;
+  }
+  .row.revealed {
+    border-color: rgba(246,201,69,.45);
+    animation: pop .45s cubic-bezier(.2,.7,.3,1.2);
+  }
+  .row.revealed .rank { color: var(--gold) }
+  .row.top1.revealed {
+    background: linear-gradient(180deg, rgba(246,201,69,.16), var(--panel));
+    box-shadow: 0 0 30px rgba(246,201,69,.15);
+  }
+  @keyframes pop {
+    from { transform: scale(.96); filter: brightness(2) }
+    to   { transform: none; filter: none }
+  }
+
+  #list-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--body);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: clamp(.85rem, 1.9vh, 1.05rem);
+    border-radius: 12px;
+    padding: clamp(8px, 1.4vh, 12px) clamp(16px, 1.8vw, 26px);
+    cursor: pointer;
+    border: 1px solid var(--panel-edge);
+    background: var(--panel);
+    color: var(--text);
+    transition: transform .15s, border-color .2s, box-shadow .2s;
+  }
+  .btn:hover { transform: translateY(-2px); border-color: var(--text-dim) }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px }
+  .btn.gold {
+    background: linear-gradient(180deg, var(--gold-hot), var(--gold));
+    color: #241a02;
+    border-color: transparent;
+  }
+  .btn.gold:hover { box-shadow: 0 8px 26px rgba(246,201,69,.3) }
+  .btn.gold:disabled { filter: grayscale(.6) brightness(.7); cursor: default; transform: none; box-shadow: none }
+  .btn.ghost { background: none; color: var(--text-dim) }
+  .btn.ghost:hover { color: var(--text) }
+
+  .rule {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: clamp(.75rem, 1.7vh, .95rem);
+  }
+  .rule b { color: var(--gold); font-weight: 700 }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important }
+    .cat-card { opacity: 1 }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="chip" href="./">‹ Alle spill</a>
+    <h1>TOPP 10</h1>
+    <span class="tagline" id="tagline">Gjett dypt – lengre ned på lista gir flere poeng</span>
+    <span class="spacer"></span>
+    <button class="chip danger" id="reset-btn">Nullstill</button>
+  </header>
+
+  <main id="cats"></main>
+
+  <section id="list-view">
+    <h2 id="question"></h2>
+    <div id="list-note"></div>
+    <div id="rows"></div>
+    <div class="rule">Riktig gjett på plass <b>1</b> gir <b>1 poeng</b> … plass <b>10</b> gir <b>10 poeng</b>. Utenfor topp 10? <b>0 poeng.</b></div>
+    <div id="list-controls">
+      <button class="btn ghost" id="back-btn">‹ Kategorier</button>
+      <button class="btn gold" id="next-btn">Avslør neste</button>
+      <button class="btn ghost" id="all-btn">Avslør alle</button>
+    </div>
+  </section>
+</div>
+
+<script>
+// ── Data ───────────────────────────────────────────────────
+const LISTS = [
+  {
+    key: "fifa",
+    name: "FIFA-rankingen",
+    q: "Hvilke herrelandslag topper FIFA-rankingen?",
+    note: "Offisiell FIFA-ranking per 11. juni 2026",
+    items: [
+      { r: 1,  n: "Argentina" },
+      { r: 2,  n: "Spania" },
+      { r: 3,  n: "Frankrike" },
+      { r: 4,  n: "England" },
+      { r: 5,  n: "Portugal" },
+      { r: 6,  n: "Brasil" },
+      { r: 7,  n: "Marokko" },
+      { r: 8,  n: "Nederland" },
+      { r: 9,  n: "Belgia" },
+      { r: 10, n: "Tyskland" },
+    ],
+  },
+  {
+    key: "insta-verden",
+    name: "Instagram – verden",
+    q: "Hvilke kontoer har flest følgere på Instagram?",
+    note: "",
+    items: [
+      { r: 1,  n: "Instagram",                 d: "686 mill." },
+      { r: 2,  n: "Cristiano Ronaldo",         d: "670 mill." },
+      { r: 3,  n: "Lionel Messi",              d: "511 mill." },
+      { r: 4,  n: "Selena Gomez",              d: "405 mill." },
+      { r: 5,  n: "Kylie Jenner",              d: "≈385 mill." },
+      { r: 6,  n: "Dwayne «The Rock» Johnson", d: "≈385 mill." },
+      { r: 7,  n: "Ariana Grande",             d: "≈368 mill." },
+      { r: 8,  n: "Kim Kardashian",            d: "≈350 mill." },
+      { r: 9,  n: "Beyoncé",                   d: "≈315 mill." },
+      { r: 10, n: "Khloé Kardashian",          d: "300+ mill." },
+    ],
+  },
+  {
+    key: "areal",
+    name: "Land etter areal",
+    q: "Hvilke land er størst i areal?",
+    note: "",
+    items: [
+      { r: 1,  n: "Russland",   d: "17,1 mill. km²" },
+      { r: 2,  n: "Canada",     d: "10,0 mill. km²" },
+      { r: 3,  n: "Kina",       d: "9,6 mill. km²" },
+      { r: 4,  n: "USA",        d: "9,5 mill. km²" },
+      { r: 5,  n: "Brasil",     d: "8,5 mill. km²" },
+      { r: 6,  n: "Australia",  d: "7,7 mill. km²" },
+      { r: 7,  n: "India",      d: "3,3 mill. km²" },
+      { r: 8,  n: "Argentina",  d: "2,8 mill. km²" },
+      { r: 9,  n: "Kasakhstan", d: "2,7 mill. km²" },
+      { r: 10, n: "Algerie",    d: "2,4 mill. km²" },
+    ],
+  },
+  {
+    key: "insta-rommet",
+    name: "Instagram – i rommet",
+    q: "Hvem i rommet har flest følgere på Instagram?",
+    note: "Hele lista avsløres – alle 20!",
+    items: [
+      { r: 1,  n: "Maria",       d: "1500" },
+      { r: 2,  n: "Anne",        d: "1126" },
+      { r: 3,  n: "Kristine",    d: "1048" },
+      { r: 4,  n: "Martine",     d: "959" },
+      { r: 5,  n: "Julia",       d: "915" },
+      { r: 6,  n: "June",        d: "913" },
+      { r: 7,  n: "Sara",        d: "824" },
+      { r: 8,  n: "Benedicte",   d: "732" },
+      { r: 9,  n: "Mats",        d: "720" },
+      { r: 10, n: "Sofia",       d: "710" },
+      { r: 11, n: "Haakon",      d: "628" },
+      { r: 12, n: "Kamz",        d: "610" },
+      { r: 13, n: "Brit",        d: "596" },
+      { r: 14, n: "Jenny",       d: "540" },
+      { r: 15, n: "Andreas",     d: "478" },
+      { r: 16, n: "Jonas",       d: "412" },
+      { r: 17, n: "Tom",         d: "326" },
+      { r: 18, n: "Han Jørgen",  d: "317" },
+      { r: 19, n: "Hans Petter", d: "239" },
+      { r: 20, n: "Morten",      d: "12" },
+    ],
+  },
+  {
+    key: "toppscorere",
+    name: "Norske toppscorere",
+    q: "Hvem har scoret flest mål for Norges herrelandslag?",
+    note: "Menn – antall mål i parentes",
+    items: [
+      { r: 1,  n: "Erling Braut Haaland", d: "55 mål" },
+      { r: 2,  n: "Jørgen Juve",          d: "33 mål" },
+      { r: 3,  n: "Einar Gundersen",      d: "26 mål" },
+      { r: 3,  n: "Alexander Sørloth",    d: "26 mål" },
+      { r: 5,  n: "Harald Hennum",        d: "25 mål" },
+      { r: 6,  n: "John Carew",           d: "24 mål" },
+      { r: 7,  n: "Ole Gunnar Solskjær",  d: "23 mål" },
+      { r: 7,  n: "Tore André Flo",       d: "23 mål" },
+      { r: 9,  n: "Gunnar Thoresen",      d: "22 mål" },
+      { r: 10, n: "Steffen Iversen",      d: "21 mål" },
+    ],
+  },
+];
+
+const STORAGE_KEY = "topp10-v1";
+
+// state.rev[key] = number of rows revealed so far (from the bottom of the list up)
+let state = { rev: {} };
+let currentList = null;
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+try {
+  const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if (s && s.rev) state = s;
+} catch (e) {}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+// ── Category picker ────────────────────────────────────────
+const catsEl = document.getElementById("cats");
+const listView = document.getElementById("list-view");
+
+function renderCats() {
+  catsEl.style.display = "";
+  listView.classList.remove("open");
+  catsEl.innerHTML = "";
+  LISTS.forEach((list, i) => {
+    const done = (state.rev[list.key] || 0) >= list.items.length;
+    const el = document.createElement("button");
+    el.className = "cat-card" + (done ? " done" : "");
+    el.style.setProperty("--i", i);
+    el.innerHTML =
+      `<span class="num">${i + 1} / ${LISTS.length}</span>` +
+      `<span class="name">${esc(list.name)}</span>` +
+      `<span class="q">${esc(list.q)}</span>` +
+      (done ? `<span class="done-tag">Ferdig avslørt</span>` : "");
+    el.addEventListener("click", () => openList(list));
+    catsEl.appendChild(el);
+  });
+}
+
+// ── List view ──────────────────────────────────────────────
+const rowsEl = document.getElementById("rows");
+const nextBtn = document.getElementById("next-btn");
+
+function openList(list) {
+  currentList = list;
+  catsEl.style.display = "none";
+  listView.classList.add("open");
+  document.getElementById("question").textContent = list.q;
+  document.getElementById("list-note").textContent = list.note;
+  rowsEl.className = list.items.length > 10 ? "cols-2" : "cols-1";
+  renderRows();
+}
+
+function renderRows() {
+  const list = currentList;
+  const revealed = state.rev[list.key] || 0;
+  rowsEl.innerHTML = "";
+  list.items.forEach((item, i) => {
+    // rows reveal bottom-up: the last `revealed` rows are open
+    const isOpen = i >= list.items.length - revealed;
+    const el = document.createElement("div");
+    el.className = "row" + (isOpen ? " revealed" : "") + (item.r === 1 ? " top1" : "");
+    el.innerHTML = isOpen
+      ? `<span class="rank">${item.r}</span><span class="name">${esc(item.n)}</span>` +
+        (item.d ? `<span class="detail">${esc(item.d)}</span>` : "")
+      : `<span class="rank">${item.r}</span><span class="mystery"><i></i></span>`;
+    rowsEl.appendChild(el);
+  });
+  const left = list.items.length - revealed;
+  nextBtn.disabled = left === 0;
+  nextBtn.textContent = left === 0 ? "Alt avslørt!" : `Avslør plass ${list.items[left - 1].r}`;
+}
+
+nextBtn.addEventListener("click", () => {
+  const list = currentList;
+  const revealed = state.rev[list.key] || 0;
+  if (revealed >= list.items.length) return;
+  state.rev[list.key] = revealed + 1;
+  save();
+  renderRows();
+});
+
+document.getElementById("all-btn").addEventListener("click", () => {
+  state.rev[currentList.key] = currentList.items.length;
+  save();
+  renderRows();
+});
+
+document.getElementById("back-btn").addEventListener("click", () => {
+  currentList = null;
+  renderCats();
+});
+
+document.addEventListener("keydown", e => {
+  if (!currentList) return;
+  if (e.key === "Escape") { currentList = null; renderCats(); }
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nextBtn.click(); }
+});
+
+// ── Reset (two-step confirm) ───────────────────────────────
+const resetBtn = document.getElementById("reset-btn");
+let resetTimer = null;
+resetBtn.addEventListener("click", () => {
+  if (resetBtn.classList.contains("armed")) {
+    clearTimeout(resetTimer);
+    state = { rev: {} };
+    save();
+    resetBtn.classList.remove("armed");
+    resetBtn.textContent = "Nullstill";
+    currentList = null;
+    renderCats();
+  } else {
+    resetBtn.classList.add("armed");
+    resetBtn.textContent = "Sikker? Trykk igjen";
+    resetTimer = setTimeout(() => {
+      resetBtn.classList.remove("armed");
+      resetBtn.textContent = "Nullstill";
+    }, 3000);
+  }
+});
+
+renderCats();
+</script>
+</body>
+</html>
