@@ -611,31 +611,31 @@ const CATEGORIES = [
   ]},
   { name: "Yrke", songs: [
     { title: "Forelska i lærer'n", artist: "The Kids", answer: "Lærer", id: "zLs4_FODT4Q" },
-    { title: "P.I.M.P.", artist: "50 Cent", answer: "Hallik", id: "UDApZhXTpH8" },
-    { title: "DJ Got Us Fallin' In Love", artist: "Usher ft. Pitbull", answer: "DJ", id: "C-dvTjK_07c" },
-    { title: "Paparazzi", artist: "Lady Gaga", answer: "Paparazzi", id: "d2smz_1L2_0" },
+    { title: "P.I.M.P.", artist: "50 Cent", answer: "Hallik", id: "UDApZhXTpH8", start: 9 },
+    { title: "DJ Got Us Fallin' In Love", artist: "Usher ft. Pitbull", answer: "DJ", id: "C-dvTjK_07c", start: 19 },
+    { title: "Paparazzi", artist: "Lady Gaga", answer: "Paparazzi", id: "d2smz_1L2_0", start: 150 },
     { title: "Buffalo Soldier", artist: "Bob Marley & The Wailers", answer: "Soldat", id: "uMUQMSXLlHM" },
   ]},
   { name: "Drikke", songs: [
-    { title: "Ølbriller", artist: "Erik og Kriss ft. BYZ", answer: "Øl", id: "TpJooV7RrMk" },
-    { title: "Milkshake", artist: "Kelis", answer: "Milkshake", id: "pGL2rytTraA" },
-    { title: "Salsa Tequila", artist: "Anders Nilsen", answer: "Tequila", id: "77Ms1oCiDH4" },
+    { title: "Ølbriller", artist: "Erik og Kriss ft. BYZ", answer: "Øl", id: "TpJooV7RrMk", start: 27 },
+    { title: "Milkshake", artist: "Kelis", answer: "Milkshake", id: "6AwXKJoKJz4" },
+    { title: "Salsa Tequila", artist: "Anders Nilsen", answer: "Tequila", id: "77Ms1oCiDH4", start: 25 },
     { title: "Cold Water", artist: "Major Lazer ft. Justin Bieber & MØ", answer: "Vann", id: "a59gmGkq_pw" },
     { title: "Funky Vodka", artist: "TJR", answer: "Vodka", id: "gKTVBtCBMoY" },
   ]},
   { name: "Farge", songs: [
-    { title: "Hvite menn som pusher 50", artist: "Karpe", answer: "Hvit", id: "NQgj8iZfxvI" },
-    { title: "Purple Rain", artist: "Prince", answer: "Lilla", id: "bm03wqLY3Nc" },
-    { title: "Black Widow", artist: "Iggy Azalea ft. Rita Ora", answer: "Sort", id: "u3u22OYqFGo" },
+    { title: "Hvite menn som pusher 50", artist: "Karpe", answer: "Hvit", id: "lPEmly57RDQ" },
+    { title: "Purple Rain", artist: "Prince", answer: "Lilla", id: "347vCib_lMs" },
+    { title: "Black Widow", artist: "Iggy Azalea ft. Rita Ora", answer: "Sort", id: "u3u22OYqFGo", start: 102 },
     { title: "Brown Eyed Girl", artist: "Van Morrison", answer: "Brun", id: "UfmkgQRmmeE" },
     { title: "Raise Your Glass", artist: "P!nk", answer: "Rosa", id: "XjVNlG5cZyQ" },
   ]},
   { name: "Dyr", songs: [
-    { title: "Baby Shark", artist: "Pinkfong", answer: "Hai", id: "XqZsoesa55w" },
+    { title: "Baby Shark", artist: "Pinkfong", answer: "Hai", id: "XqZsoesa55w", start: 27 },
     { title: "Fireflies", artist: "Owl City", answer: "Ildflue", id: "psuRGfAaju4" },
-    { title: "Pony", artist: "Ginuwine", answer: "Ponny", id: "lbnoG2dsUk0" },
+    { title: "Pony", artist: "Ginuwine", answer: "Ponny", id: "lbnoG2dsUk0", start: 20 },
     { title: "Panda", artist: "Desiigner", answer: "Panda", id: "E5ONTXHS2mM" },
-    { title: "Running With The Wolves", artist: "AURORA", answer: "Ulv", id: "06ht9MyJLT4" },
+    { title: "Running With The Wolves", artist: "AURORA", answer: "Ulv", id: "06ht9MyJLT4", start: 20 },
   ]},
 ];
 const VALUES = [100, 200, 300, 400, 500];
@@ -780,7 +780,8 @@ function openTile(c, r) {
   document.getElementById("m-song").textContent = song.title;
   document.getElementById("m-artist").textContent = song.artist;
   document.getElementById("m-answer").textContent = "Svar: " + song.answer;
-  document.getElementById("yt-link").href = "https://www.youtube.com/watch?v=" + song.id;
+  document.getElementById("yt-link").href =
+    "https://www.youtube.com/watch?v=" + song.id + (song.start ? "&t=" + song.start + "s" : "");
 
   coverEl.classList.remove("revealed");
   answerBanner.classList.remove("show");
@@ -790,7 +791,7 @@ function openTile(c, r) {
   modalEl.classList.add("open");
 
   if (playerReady) {
-    player.cueVideoById(song.id);
+    player.cueVideoById({ videoId: song.id, startSeconds: song.start || 0 });
     playBtn.disabled = false;
   }
 }
@@ -886,7 +887,8 @@ window.onYouTubeIframeAPIReady = function () {
         playerReady = true;
         player.setVolume(100);
         if (current) {
-          player.cueVideoById(CATEGORIES[current.c].songs[current.r].id);
+          const song = CATEGORIES[current.c].songs[current.r];
+          player.cueVideoById({ videoId: song.id, startSeconds: song.start || 0 });
           playBtn.disabled = false;
         }
       },
