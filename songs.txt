@@ -25,9 +25,9 @@ Funky Vodka - Vodka - 500
 
 Farge: 
 
-Hvite menn som pusher 50 - Hvit - 100
-Purple Rain - Lilla - 200
-Black Widow - Sort - 300
+Purple Rain - Lilla - 100
+Black Widow - Sort - 200
+Hvite menn som pusher 50 - Hvit - 300
 Brown Eyed Girl - Brun - 400
 Raise your glass - Rosa - 500
 
