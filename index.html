@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musikkjeopardy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #07080f;
+    --panel: #12152a;
+    --panel-edge: #232849;
+    --gold: #f6c945;
+    --gold-hot: #ffe08a;
+    --violet: #8b7cff;
+    --rose: #ff5470;
+    --text: #f2f1ec;
+    --text-dim: #9a9cb5;
+    --display: "Anton", sans-serif;
+    --body: "Space Grotesk", sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--body);
+    background: var(--ink);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* Ambient stage lighting */
+  body::before, body::after {
+    content: "";
+    position: fixed;
+    inset: -30%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    background: radial-gradient(ellipse 40% 50% at 18% 8%, rgba(139,124,255,.14), transparent 60%);
+    animation: drift-a 26s ease-in-out infinite alternate;
+  }
+  body::after {
+    background: radial-gradient(ellipse 45% 55% at 85% 92%, rgba(246,201,69,.10), transparent 60%);
+    animation: drift-b 32s ease-in-out infinite alternate;
+  }
+  @keyframes drift-a { to { transform: translate(6%, 4%) } }
+  @keyframes drift-b { to { transform: translate(-5%, -4%) } }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(10px, 1.6vh, 22px) clamp(14px, 2vw, 34px);
+    gap: clamp(8px, 1.4vh, 18px);
+  }
+
+  /* ── Header ─────────────────────────────── */
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-size: clamp(1.5rem, 3.2vh, 2.2rem);
+    letter-spacing: .06em;
+    color: var(--gold);
+    text-shadow: 0 0 24px rgba(246,201,69,.35);
+    font-weight: 400;
+  }
+  header .tagline {
+    color: var(--text-dim);
+    font-size: clamp(.75rem, 1.6vh, 1rem);
+    letter-spacing: .02em;
+  }
+  header .spacer { flex: 1 }
+  #reset-btn {
+    font-family: var(--body);
+    font-size: .85rem;
+    color: var(--text-dim);
+    background: none;
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+  }
+  #reset-btn:hover { color: var(--rose); border-color: var(--rose); }
+  #reset-btn.armed { color: var(--rose); border-color: var(--rose); }
+
+  /* ── Board ─────────────────────────────── */
+  #board {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: auto repeat(5, 1fr);
+    gap: clamp(6px, 1vh, 12px);
+    min-height: 0;
+  }
+  .cat {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(.9rem, 2.4vh, 1.5rem);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text);
+    background: linear-gradient(180deg, #1a1e3a, var(--panel));
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+    padding: clamp(8px, 1.4vh, 16px) 8px;
+    opacity: 0;
+    animation: tile-in .55s cubic-bezier(.2,.7,.3,1.1) forwards;
+    animation-delay: calc(var(--i) * 45ms);
+  }
+  .tile {
+    position: relative;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.6rem, 5.2vh, 3.4rem);
+    color: var(--gold);
+    text-shadow: 0 0 18px rgba(246,201,69,.28);
+    background: linear-gradient(180deg, #161a33, var(--panel));
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    opacity: 0;
+    animation: tile-in .55s cubic-bezier(.2,.7,.3,1.1) forwards;
+    animation-delay: calc(var(--i) * 45ms);
+  }
+  @keyframes tile-in {
+    from { opacity: 0; transform: perspective(900px) rotateX(-60deg) translateY(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .tile:hover:not(.used), .tile:focus-visible:not(.used) {
+    transform: translateY(-3px);
+    border-color: var(--gold);
+    box-shadow: 0 10px 34px rgba(246,201,69,.18), inset 0 0 22px rgba(246,201,69,.06);
+  }
+  .tile:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .tile.used {
+    cursor: default;
+    color: var(--text-dim);
+    text-shadow: none;
+    opacity: .38 !important;
+    font-size: clamp(.75rem, 1.9vh, 1.05rem);
+    font-family: var(--body);
+    letter-spacing: .02em;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    text-align: center;
+  }
+  .tile.used .who { font-size: .8em; color: var(--gold); opacity: .9 }
+
+  /* ── Scoreboard ─────────────────────────── */
+  #scorebar {
+    display: flex;
+    justify-content: center;
+    gap: clamp(10px, 1.6vw, 26px);
+    flex-wrap: wrap;
+  }
+  .team {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 14px;
+    padding: clamp(6px, 1vh, 10px) clamp(12px, 1.4vw, 20px);
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .team.leader {
+    border-color: rgba(246,201,69,.55);
+    box-shadow: 0 0 22px rgba(246,201,69,.12);
+  }
+  .team .name { font-weight: 700; font-size: clamp(.85rem, 1.8vh, 1.1rem); letter-spacing: .02em; }
+  .team .crown { font-size: .9em }
+  .team .score {
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 2.6vh, 1.7rem);
+    color: var(--gold);
+    min-width: 3.2ch;
+    text-align: right;
+  }
+  .team .adj {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .team .adj button {
+    font-family: var(--body);
+    background: none;
+    border: 1px solid var(--panel-edge);
+    color: var(--text-dim);
+    border-radius: 6px;
+    width: 22px; height: 17px;
+    font-size: .65rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .team .adj button:hover { color: var(--text); border-color: var(--text-dim) }
+
+  /* ── Modal ──────────────────────────────── */
+  #modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4,5,11,.82);
+    backdrop-filter: blur(10px);
+  }
+  #modal.open { display: flex }
+  #modal .card {
+    width: min(1080px, 94vw);
+    max-height: 94vh;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #171b36, #0d1022);
+    border: 1px solid var(--panel-edge);
+    border-radius: 20px;
+    padding: clamp(16px, 2.4vh, 28px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 1.8vh, 18px);
+    animation: card-in .35s cubic-bezier(.2,.7,.3,1.15);
+    box-shadow: 0 30px 90px rgba(0,0,0,.6);
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: scale(.93) translateY(14px) }
+    to   { opacity: 1; transform: none }
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .card-head .badge {
+    font-family: var(--display);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-size: clamp(1rem, 2.4vh, 1.5rem);
+  }
+  .card-head .badge .pts { color: var(--gold) }
+  .card-head .spacer { flex: 1 }
+  #close-btn {
+    background: none;
+    border: 1px solid var(--panel-edge);
+    color: var(--text-dim);
+    border-radius: 10px;
+    width: 38px; height: 38px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+  }
+  #close-btn:hover { color: var(--text); border-color: var(--text-dim) }
+
+  /* Stage: video underneath, turntable cover on top */
+  #stage {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    max-height: 56vh;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+  }
+  #player-host { position: absolute; inset: 0 }
+  #player-host iframe { width: 100%; height: 100% }
+
+  #cover {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vh;
+    background:
+      radial-gradient(ellipse 70% 90% at 50% 115%, rgba(139,124,255,.16), transparent 60%),
+      linear-gradient(180deg, #141833, #0a0c1c);
+    transition: opacity .6s ease, visibility .6s;
+  }
+  #cover.revealed { opacity: 0; visibility: hidden; pointer-events: none }
+
+  /* The turntable — click the label to play */
+  #turntable { position: relative; width: min(30vh, 260px); }
+  #vinyl {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, #000 0 13%, transparent 13.5%),
+      repeating-radial-gradient(circle, #14141a 0 1.2%, #1f1f28 1.4% 2.4%),
+      #14141a;
+    box-shadow: 0 14px 44px rgba(0,0,0,.65), inset 0 0 40px rgba(0,0,0,.5);
+    animation: spin 2.2s linear infinite;
+    animation-play-state: paused;
+  }
+  .playing #vinyl { animation-play-state: running }
+  @keyframes spin { to { transform: rotate(360deg) } }
+  #play-btn {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 38%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: none;
+    background: radial-gradient(circle at 35% 30%, var(--gold-hot), var(--gold) 60%, #c99a1e);
+    color: #241a02;
+    font-size: clamp(1.2rem, 3.4vh, 2rem);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 6px rgba(0,0,0,.55), 0 0 34px rgba(246,201,69,.4);
+    transition: transform .15s ease;
+    z-index: 2;
+  }
+  #play-btn:hover { transform: translate(-50%, -50%) scale(1.07) }
+  #play-btn:focus-visible { outline: 3px solid var(--gold-hot); outline-offset: 3px }
+  #play-btn:disabled { filter: grayscale(.7) brightness(.6); cursor: wait }
+  #tonearm {
+    position: absolute;
+    top: -6%; right: -14%;
+    width: 10%;
+    height: 62%;
+    transform-origin: 50% 8%;
+    transform: rotate(-24deg);
+    transition: transform .7s cubic-bezier(.3,.8,.4,1);
+    z-index: 1;
+  }
+  .playing #tonearm { transform: rotate(4deg) }
+  #tonearm::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 34%;
+    height: 100%;
+    background: linear-gradient(180deg, #565d85, #333854);
+    border-radius: 4px;
+  }
+  #tonearm::after {
+    content: "";
+    position: absolute;
+    top: -4px; left: 50%;
+    transform: translateX(-50%);
+    width: 130%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #7d84ad, #40456a);
+  }
+
+  #cover .hint {
+    color: var(--text-dim);
+    font-size: clamp(.8rem, 1.9vh, 1.05rem);
+    letter-spacing: .04em;
+  }
+
+  /* Equalizer */
+  #eq {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 7vh;
+  }
+  #eq span {
+    width: clamp(6px, .8vw, 12px);
+    height: 100%;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(180deg, var(--violet), var(--gold));
+    opacity: .85;
+    transform-origin: bottom;
+    transform: scaleY(.08);
+    animation: bounce 1s ease-in-out infinite alternate;
+    animation-play-state: paused;
+  }
+  .playing #eq span { animation-play-state: running }
+  @keyframes bounce {
+    from { transform: scaleY(.08) }
+    to   { transform: scaleY(1) }
+  }
+
+  /* Reveal banner + award row */
+  #reveal-zone { display: flex; flex-direction: column; gap: clamp(10px, 1.6vh, 16px) }
+  #answer-banner {
+    display: none;
+    align-items: baseline;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    text-align: center;
+    padding: clamp(8px, 1.4vh, 14px);
+    background: rgba(246,201,69,.07);
+    border: 1px solid rgba(246,201,69,.35);
+    border-radius: 12px;
+    animation: card-in .4s ease;
+  }
+  #answer-banner.show { display: flex }
+  #answer-banner .song { font-weight: 700; font-size: clamp(1rem, 2.3vh, 1.4rem) }
+  #answer-banner .artist { color: var(--text-dim); font-size: clamp(.85rem, 2vh, 1.15rem) }
+  #answer-banner .ans {
+    font-family: var(--display);
+    letter-spacing: .06em;
+    color: var(--gold);
+    font-size: clamp(1.1rem, 2.6vh, 1.6rem);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: clamp(.85rem, 1.9vh, 1.05rem);
+    letter-spacing: .02em;
+    border-radius: 12px;
+    padding: clamp(8px, 1.4vh, 12px) clamp(16px, 1.8vw, 26px);
+    cursor: pointer;
+    border: 1px solid var(--panel-edge);
+    background: var(--panel);
+    color: var(--text);
+    transition: transform .15s, border-color .2s, box-shadow .2s;
+  }
+  .btn:hover { transform: translateY(-2px); border-color: var(--text-dim) }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px }
+  .btn.gold {
+    background: linear-gradient(180deg, var(--gold-hot), var(--gold));
+    color: #241a02;
+    border-color: transparent;
+  }
+  .btn.gold:hover { box-shadow: 0 8px 26px rgba(246,201,69,.3) }
+  .btn.ghost { background: none; color: var(--text-dim) }
+  .btn.ghost:hover { color: var(--text) }
+
+  #award-row { display: none }
+  #award-row.show { display: flex; flex-direction: column; gap: 10px; align-items: center }
+  #award-row .label { color: var(--text-dim); font-size: clamp(.8rem, 1.8vh, 1rem); letter-spacing: .08em; text-transform: uppercase }
+  #award-row .teams { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center }
+
+  /* ── Setup / title screen ───────────────── */
+  #setup {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse 50% 45% at 50% 0%, rgba(139,124,255,.16), transparent 65%),
+      radial-gradient(ellipse 55% 45% at 50% 110%, rgba(246,201,69,.12), transparent 65%),
+      var(--ink);
+  }
+  #setup .inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(14px, 2.6vh, 26px);
+    width: min(560px, 92vw);
+    text-align: center;
+  }
+  #setup .eyebrow {
+    color: var(--violet);
+    letter-spacing: .34em;
+    text-transform: uppercase;
+    font-size: clamp(.7rem, 1.6vh, .95rem);
+    animation: rise .7s ease both;
+  }
+  #setup h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(3rem, 11vh, 6.5rem);
+    line-height: .95;
+    letter-spacing: .04em;
+    color: var(--gold);
+    text-shadow: 0 0 60px rgba(246,201,69,.4);
+    animation: rise .7s .12s ease both;
+  }
+  #setup .tag {
+    color: var(--text-dim);
+    font-size: clamp(.9rem, 2.2vh, 1.2rem);
+    animation: rise .7s .24s ease both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(18px) }
+    to   { opacity: 1; transform: none }
+  }
+  #team-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    animation: rise .7s .36s ease both;
+  }
+  #team-list input {
+    font-family: var(--body);
+    font-size: 1.05rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 12px 16px;
+    width: 100%;
+    text-align: center;
+  }
+  #team-list input:focus { outline: 2px solid var(--gold); border-color: transparent }
+  #setup .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; animation: rise .7s .48s ease both }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important }
+    .cat, .tile { opacity: 1 }
+    #vinyl { animation: none }
+    #eq span { transform: scaleY(.5); animation: none }
+  }
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <div class="inner">
+    <div class="eyebrow">Kveldens hovedattraksjon</div>
+    <h1>Musikk&shy;jeopardy</h1>
+    <div class="tag">Hør låta. Gjett svaret. Stjel poengene.</div>
+    <div id="team-list"></div>
+    <div class="actions">
+      <button class="btn ghost" id="add-team-btn">+ Legg til lag</button>
+      <button class="btn gold" id="start-btn">Start spillet</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <h1>MUSIKKJEOPARDY</h1>
+    <span class="tagline">Hør låta. Gjett svaret.</span>
+    <span class="spacer"></span>
+    <button id="reset-btn">Nytt spill</button>
+  </header>
+  <main id="board"></main>
+  <footer id="scorebar"></footer>
+</div>
+
+<div id="modal">
+  <div class="card">
+    <div class="card-head">
+      <span class="badge"><span id="m-cat"></span> · <span class="pts" id="m-pts"></span></span>
+      <span class="spacer"></span>
+      <button id="close-btn" title="Lukk (Esc)">✕</button>
+    </div>
+    <div id="stage">
+      <div id="player-host"><div id="yt-player"></div></div>
+      <div id="cover">
+        <div id="turntable">
+          <div id="vinyl"></div>
+          <div id="tonearm"></div>
+          <button id="play-btn" disabled>▶</button>
+        </div>
+        <div id="eq"></div>
+        <div class="hint">Trykk på plata for å spille av</div>
+      </div>
+    </div>
+    <div id="reveal-zone">
+      <div id="answer-banner">
+        <span class="song" id="m-song"></span>
+        <span class="artist" id="m-artist"></span>
+        <span class="ans" id="m-answer"></span>
+      </div>
+      <div class="controls" id="pre-award">
+        <button class="btn gold" id="reveal-btn">Vis fasit</button>
+        <a class="btn ghost" id="yt-link" target="_blank" rel="noopener">Åpne på YouTube ↗</a>
+      </div>
+      <div id="award-row">
+        <span class="label">Hvem tok den?</span>
+        <div class="teams" id="award-teams"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Game data ──────────────────────────────────────────────
+const CATEGORIES = [
+  { name: "Tidspunkt", songs: [
+    { title: "Summer Of '69", artist: "Bryan Adams", answer: "Sommeren '69", id: "9f06QZCVUHg" },
+    { title: "Last Friday Night (T.G.I.F.)", artist: "Katy Perry", answer: "Forrige fredag kveld", id: "KlyXNRrsk4A" },
+    { title: "2002", artist: "Anne-Marie", answer: "2002", id: "Il-an3K9pjg" },
+    { title: "September", artist: "Earth, Wind & Fire", answer: "21. september", id: "Gs069dndIYk" },
+    { title: "Firework", artist: "Katy Perry", answer: "4. juli", id: "QGJuMBdaqIw" },
+  ]},
+  { name: "Yrke", songs: [
+    { title: "Forelska i lærer'n", artist: "The Kids", answer: "Lærer", id: "zLs4_FODT4Q" },
+    { title: "P.I.M.P.", artist: "50 Cent", answer: "Hallik", id: "UDApZhXTpH8" },
+    { title: "DJ Got Us Fallin' In Love", artist: "Usher ft. Pitbull", answer: "DJ", id: "C-dvTjK_07c" },
+    { title: "Paparazzi", artist: "Lady Gaga", answer: "Paparazzi", id: "d2smz_1L2_0" },
+    { title: "Buffalo Soldier", artist: "Bob Marley & The Wailers", answer: "Soldat", id: "uMUQMSXLlHM" },
+  ]},
+  { name: "Drikke", songs: [
+    { title: "Ølbriller", artist: "Erik og Kriss ft. BYZ", answer: "Øl", id: "TpJooV7RrMk" },
+    { title: "Milkshake", artist: "Kelis", answer: "Milkshake", id: "pGL2rytTraA" },
+    { title: "Salsa Tequila", artist: "Anders Nilsen", answer: "Tequila", id: "77Ms1oCiDH4" },
+    { title: "Cold Water", artist: "Major Lazer ft. Justin Bieber & MØ", answer: "Vann", id: "a59gmGkq_pw" },
+    { title: "Funky Vodka", artist: "TJR", answer: "Vodka", id: "gKTVBtCBMoY" },
+  ]},
+  { name: "Farge", songs: [
+    { title: "Hvite menn som pusher 50", artist: "Karpe", answer: "Hvit", id: "NQgj8iZfxvI" },
+    { title: "Purple Rain", artist: "Prince", answer: "Lilla", id: "bm03wqLY3Nc" },
+    { title: "Black Widow", artist: "Iggy Azalea ft. Rita Ora", answer: "Sort", id: "u3u22OYqFGo" },
+    { title: "Brown Eyed Girl", artist: "Van Morrison", answer: "Brun", id: "UfmkgQRmmeE" },
+    { title: "Raise Your Glass", artist: "P!nk", answer: "Rosa", id: "XjVNlG5cZyQ" },
+  ]},
+  { name: "Dyr", songs: [
+    { title: "Baby Shark", artist: "Pinkfong", answer: "Hai", id: "XqZsoesa55w" },
+    { title: "Fireflies", artist: "Owl City", answer: "Ildflue", id: "psuRGfAaju4" },
+    { title: "Pony", artist: "Ginuwine", answer: "Ponny", id: "lbnoG2dsUk0" },
+    { title: "Panda", artist: "Desiigner", answer: "Panda", id: "E5ONTXHS2mM" },
+    { title: "Running With The Wolves", artist: "AURORA", answer: "Ulv", id: "06ht9MyJLT4" },
+  ]},
+];
+const VALUES = [100, 200, 300, 400, 500];
+const STORAGE_KEY = "musikkjeopardy-v1";
+
+// ── State ──────────────────────────────────────────────────
+let state = { teams: [], used: {} };
+let current = null;          // { c, r } for the open tile
+let player = null;
+let playerReady = false;
+let isPlaying = false;
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s && Array.isArray(s.teams) && s.teams.length) { state = s; return true; }
+  } catch (e) {}
+  return false;
+}
+
+// ── Setup screen ───────────────────────────────────────────
+const setupEl = document.getElementById("setup");
+const teamListEl = document.getElementById("team-list");
+
+function addTeamInput(name) {
+  if (teamListEl.children.length >= 6) return;
+  const input = document.createElement("input");
+  input.placeholder = "Lagnavn";
+  input.value = name || "Lag " + (teamListEl.children.length + 1);
+  input.maxLength = 20;
+  teamListEl.appendChild(input);
+}
+document.getElementById("add-team-btn").addEventListener("click", () => addTeamInput());
+document.getElementById("start-btn").addEventListener("click", () => {
+  const names = [...teamListEl.querySelectorAll("input")]
+    .map(i => i.value.trim()).filter(Boolean);
+  if (!names.length) return;
+  state = { teams: names.map(n => ({ name: n, score: 0 })), used: {} };
+  save();
+  startGame();
+});
+
+function startGame() {
+  setupEl.style.display = "none";
+  document.getElementById("app").hidden = false;
+  renderBoard();
+  renderScores();
+}
+
+// ── Board ──────────────────────────────────────────────────
+const boardEl = document.getElementById("board");
+
+function renderBoard() {
+  boardEl.innerHTML = "";
+  let i = 0;
+  CATEGORIES.forEach(cat => {
+    const el = document.createElement("div");
+    el.className = "cat";
+    el.style.setProperty("--i", i++);
+    el.textContent = cat.name;
+    boardEl.appendChild(el);
+  });
+  VALUES.forEach((val, r) => {
+    CATEGORIES.forEach((cat, c) => {
+      const key = c + "-" + r;
+      const el = document.createElement("button");
+      el.className = "tile";
+      el.style.setProperty("--i", i++);
+      if (state.used[key]) {
+        el.classList.add("used");
+        const song = cat.songs[r];
+        const winner = state.used[key].team;
+        el.innerHTML = `<span>${song.title}</span>` +
+          (winner != null && state.teams[winner]
+            ? `<span class="who">${esc(state.teams[winner].name)} +${val}</span>` : "");
+      } else {
+        el.textContent = val;
+        el.addEventListener("click", () => openTile(c, r));
+      }
+      boardEl.appendChild(el);
+    });
+  });
+}
+
+function esc(s) {
+  return s.replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+// ── Scoreboard ─────────────────────────────────────────────
+const scorebarEl = document.getElementById("scorebar");
+
+function renderScores() {
+  scorebarEl.innerHTML = "";
+  const max = Math.max(...state.teams.map(t => t.score));
+  state.teams.forEach((team, i) => {
+    const el = document.createElement("div");
+    el.className = "team" + (team.score === max && max > 0 ? " leader" : "");
+    el.innerHTML =
+      `<span class="name">${team.score === max && max > 0 ? '<span class="crown">👑</span> ' : ""}${esc(team.name)}</span>` +
+      `<span class="score">${team.score}</span>`;
+    const adj = document.createElement("div");
+    adj.className = "adj";
+    const up = document.createElement("button");
+    up.textContent = "+";
+    up.title = "+100";
+    up.addEventListener("click", () => { team.score += 100; save(); renderScores(); });
+    const down = document.createElement("button");
+    down.textContent = "−";
+    down.title = "−100";
+    down.addEventListener("click", () => { team.score -= 100; save(); renderScores(); });
+    adj.append(up, down);
+    el.appendChild(adj);
+    scorebarEl.appendChild(el);
+  });
+}
+
+// ── Modal / playback ───────────────────────────────────────
+const modalEl = document.getElementById("modal");
+const coverEl = document.getElementById("cover");
+const playBtn = document.getElementById("play-btn");
+const revealBtn = document.getElementById("reveal-btn");
+const answerBanner = document.getElementById("answer-banner");
+const awardRow = document.getElementById("award-row");
+
+// equalizer bars with randomized rhythm
+const eqEl = document.getElementById("eq");
+for (let i = 0; i < 22; i++) {
+  const bar = document.createElement("span");
+  bar.style.animationDuration = (0.45 + ((i * 7919) % 100) / 160) + "s";
+  bar.style.animationDelay = "-" + ((i * 104729) % 100) / 100 + "s";
+  eqEl.appendChild(bar);
+}
+
+function openTile(c, r) {
+  current = { c, r };
+  const song = CATEGORIES[c].songs[r];
+  document.getElementById("m-cat").textContent = CATEGORIES[c].name;
+  document.getElementById("m-pts").textContent = VALUES[r];
+  document.getElementById("m-song").textContent = song.title;
+  document.getElementById("m-artist").textContent = song.artist;
+  document.getElementById("m-answer").textContent = "Svar: " + song.answer;
+  document.getElementById("yt-link").href = "https://www.youtube.com/watch?v=" + song.id;
+
+  coverEl.classList.remove("revealed");
+  answerBanner.classList.remove("show");
+  awardRow.classList.remove("show");
+  document.getElementById("pre-award").style.display = "";
+  setPlaying(false);
+  modalEl.classList.add("open");
+
+  if (playerReady) {
+    player.cueVideoById(song.id);
+    playBtn.disabled = false;
+  }
+}
+
+function closeModal() {
+  modalEl.classList.remove("open");
+  if (playerReady) player.stopVideo();
+  setPlaying(false);
+  current = null;
+}
+document.getElementById("close-btn").addEventListener("click", closeModal);
+modalEl.addEventListener("click", e => { if (e.target === modalEl) closeModal(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && modalEl.classList.contains("open")) closeModal();
+});
+
+function setPlaying(on) {
+  isPlaying = on;
+  modalEl.classList.toggle("playing", on);
+  playBtn.textContent = on ? "❚❚" : "▶";
+}
+
+playBtn.addEventListener("click", () => {
+  if (!playerReady) return;
+  if (isPlaying) player.pauseVideo();
+  else player.playVideo();
+});
+
+revealBtn.addEventListener("click", () => {
+  coverEl.classList.add("revealed");
+  answerBanner.classList.add("show");
+  document.getElementById("pre-award").style.display = "none";
+  buildAwardButtons();
+  awardRow.classList.add("show");
+});
+
+function buildAwardButtons() {
+  const box = document.getElementById("award-teams");
+  box.innerHTML = "";
+  const pts = VALUES[current.r];
+  state.teams.forEach((team, i) => {
+    const b = document.createElement("button");
+    b.className = "btn gold";
+    b.textContent = `${team.name} +${pts}`;
+    b.addEventListener("click", () => award(i));
+    box.appendChild(b);
+  });
+  const none = document.createElement("button");
+  none.className = "btn ghost";
+  none.textContent = "Ingen tok den";
+  none.addEventListener("click", () => award(null));
+  box.appendChild(none);
+}
+
+function award(teamIdx) {
+  const key = current.c + "-" + current.r;
+  state.used[key] = { team: teamIdx };
+  if (teamIdx != null) state.teams[teamIdx].score += VALUES[current.r];
+  save();
+  closeModal();
+  renderBoard();
+  renderScores();
+}
+
+// ── Reset ──────────────────────────────────────────────────
+const resetBtn = document.getElementById("reset-btn");
+let resetTimer = null;
+resetBtn.addEventListener("click", () => {
+  if (resetBtn.classList.contains("armed")) {
+    clearTimeout(resetTimer);
+    resetBtn.classList.remove("armed");
+    resetBtn.textContent = "Nytt spill";
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    location.reload();
+  } else {
+    resetBtn.classList.add("armed");
+    resetBtn.textContent = "Sikker? Trykk igjen";
+    resetTimer = setTimeout(() => {
+      resetBtn.classList.remove("armed");
+      resetBtn.textContent = "Nytt spill";
+    }, 3000);
+  }
+});
+
+// ── YouTube IFrame API ─────────────────────────────────────
+window.onYouTubeIframeAPIReady = function () {
+  player = new YT.Player("yt-player", {
+    width: "100%",
+    height: "100%",
+    playerVars: { rel: 0, iv_load_policy: 3, playsinline: 1 },
+    events: {
+      onReady: () => {
+        playerReady = true;
+        player.setVolume(100);
+        if (current) {
+          player.cueVideoById(CATEGORIES[current.c].songs[current.r].id);
+          playBtn.disabled = false;
+        }
+      },
+      onStateChange: e => {
+        setPlaying(e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.BUFFERING);
+      },
+      onError: () => {
+        document.querySelector("#cover .hint").textContent =
+          "Videoen kan ikke spilles her – bruk «Åpne på YouTube»-knappen under.";
+      },
+    },
+  });
+};
+const ytScript = document.createElement("script");
+ytScript.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(ytScript);
+
+// ── Boot ───────────────────────────────────────────────────
+if (load()) {
+  startGame();
+} else {
+  addTeamInput();
+  addTeamInput();
+}
+</script>
+</body>
+</html>
