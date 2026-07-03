@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kveldens spill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #07080f;
+    --panel: #12152a;
+    --panel-edge: #232849;
+    --gold: #f6c945;
+    --gold-hot: #ffe08a;
+    --violet: #8b7cff;
+    --text: #f2f1ec;
+    --text-dim: #9a9cb5;
+    --display: "Anton", sans-serif;
+    --body: "Space Grotesk", sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--body);
+    background:
+      radial-gradient(ellipse 50% 45% at 50% 0%, rgba(139,124,255,.16), transparent 65%),
+      radial-gradient(ellipse 55% 45% at 50% 110%, rgba(246,201,69,.12), transparent 65%),
+      var(--ink);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(20px, 4.5vh, 46px);
+    width: min(1100px, 94vw);
+    text-align: center;
+    padding: 24px;
+  }
+
+  /* ── Sofia polaroids ────────────────────── */
+  #polaroids { position: fixed; inset: 0; z-index: 0; pointer-events: none }
+  .polaroid {
+    position: absolute;
+    width: clamp(110px, 13vw, 210px);
+    background: #f7f4ec;
+    padding: 8px 8px 30px;
+    border-radius: 4px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.55);
+    transform: rotate(var(--r, 0deg));
+    animation: sway 7s ease-in-out infinite alternate, drop .8s cubic-bezier(.2,.7,.3,1.15) both;
+    animation-delay: var(--d, 0s), calc(var(--d, 0s) * .4);
+  }
+  .polaroid img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 6;
+    object-fit: cover;
+    filter: saturate(1.05);
+  }
+  .polaroid.wide { width: clamp(150px, 17vw, 280px) }
+  .polaroid.wide img { aspect-ratio: 4 / 3 }
+  .polaroid figcaption {
+    font-family: "Caveat", var(--body);
+    text-align: center;
+    color: #3a3427;
+    font-size: clamp(.9rem, 1.9vh, 1.25rem);
+    line-height: 30px;
+    height: 0;
+  }
+  @keyframes sway {
+    from { transform: rotate(var(--r, 0deg)) }
+    to   { transform: rotate(calc(var(--r, 0deg) + 2.5deg)) translateY(4px) }
+  }
+  @keyframes drop {
+    from { opacity: 0; transform: rotate(var(--r, 0deg)) translateY(-30px) scale(1.08) }
+    to   { opacity: 1; transform: rotate(var(--r, 0deg)) }
+  }
+  @media (max-width: 900px) { .polaroid { display: none } }
+
+  .eyebrow {
+    color: var(--violet);
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    font-size: clamp(1.1rem, 3vh, 1.8rem);
+    font-weight: 700;
+    text-shadow: 0 0 30px rgba(139,124,255,.5);
+    animation: rise .7s ease both;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(3rem, 12vh, 7rem);
+    line-height: .95;
+    letter-spacing: .04em;
+    color: var(--gold);
+    text-shadow: 0 0 60px rgba(246,201,69,.4);
+    animation: rise .7s .12s ease both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(18px) }
+    to   { opacity: 1; transform: none }
+  }
+
+  .games {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: clamp(12px, 1.8vw, 22px);
+    width: 100%;
+  }
+  .game {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(6px, 1.3vh, 13px);
+    background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03) 45%, rgba(139,124,255,.05));
+    backdrop-filter: blur(18px) saturate(1.5);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 20px;
+    padding: clamp(18px, 4vh, 36px) clamp(16px, 2.2vw, 32px);
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 14px 44px rgba(0,0,0,.35);
+    transition: transform .2s ease, border-color .2s, box-shadow .2s, background .2s;
+    animation: rise .7s .28s ease both;
+  }
+  .game::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 90% 60% at 50% -20%, rgba(255,255,255,.14), transparent 60%);
+    pointer-events: none;
+  }
+  .game:nth-child(2) { animation-delay: .4s }
+  .game:nth-child(3) { animation-delay: .52s }
+  .game:hover, .game:focus-visible {
+    transform: translateY(-5px);
+    border-color: rgba(246,201,69,.65);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 18px 60px rgba(246,201,69,.16);
+    outline: none;
+  }
+  .game .icon { font-size: clamp(1.6rem, 4.6vh, 2.6rem); line-height: 1 }
+  .game .name {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.2rem, 3.4vh, 2.1rem);
+    letter-spacing: .06em;
+    color: var(--gold);
+  }
+  .game .desc {
+    color: var(--text-dim);
+    font-size: clamp(.8rem, 1.8vh, 1rem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important }
+  }
+</style>
+</head>
+<body>
+<div id="polaroids">
+  <figure class="polaroid" style="top: 4%;  left: 2%;   --r: -7deg; --d: 0s"><img src="sofia/01.jpg" alt="Sofia"><figcaption>Bursdagsbarnet! 🎂</figcaption></figure>
+  <figure class="polaroid" style="top: 40%; left: -1%;  --r: 5deg;  --d: .8s"><img src="sofia/02.jpg" alt="Sofia"><figcaption>Sofia ❤️</figcaption></figure>
+  <figure class="polaroid" style="bottom: 3%; left: 6%; --r: -4deg; --d: 1.6s"><img src="sofia/03.jpg" alt="Sofia"><figcaption>Alltid klar 📸</figcaption></figure>
+  <figure class="polaroid" style="top: 5%;  right: 2%;  --r: 6deg;  --d: .4s"><img src="sofia/04.jpg" alt="Sofia"><figcaption>Hipp hurra!</figcaption></figure>
+  <figure class="polaroid" style="top: 41%; right: -1%; --r: -5deg; --d: 1.2s"><img src="sofia/05.jpg" alt="Sofia"><figcaption>Stjerna ⭐</figcaption></figure>
+  <figure class="polaroid" style="bottom: 3%; right: 6%; --r: 4deg; --d: 2s"><img src="sofia/06.jpg" alt="Sofia"><figcaption>Feirer deg! 🥳</figcaption></figure>
+  <figure class="polaroid" style="bottom: -2%; left: 44%; --r: -3deg; --d: 2.4s"><img src="sofia/07.jpg" alt="Sofia"><figcaption>🎉🎉🎉</figcaption></figure>
+  <figure class="polaroid wide" style="top: 2%; left: 21%; --r: -3deg; --d: 2.8s"><img src="sofia/08.jpg" alt="Sofia og gjengen"><figcaption>Hele gjengen 💕</figcaption></figure>
+  <figure class="polaroid wide" style="top: 2%; right: 21%; --r: 4deg; --d: 3.2s"><img src="sofia/09.jpg" alt="Sofia på tikibar"><figcaption>Get freaky at the tiki 🌺</figcaption></figure>
+</div>
+<main>
+  <div>
+    <div class="eyebrow">Hipp hurra for Sofia! 🎂</div>
+    <h1>Kveldens spill</h1>
+  </div>
+  <nav class="games">
+    <a class="game" href="jeopardy.html">
+      <span class="icon">🎵</span>
+      <span class="name">MUSIKKJEOPARDY</span>
+      <span class="desc">Hør låta. Gjett svaret. Stjel poengene.</span>
+    </a>
+    <a class="game" href="topp10.html">
+      <span class="icon">🏆</span>
+      <span class="name">TOPP 10</span>
+      <span class="desc">Gjett trygt eller gjett dypt – lengre ned på lista gir flere poeng.</span>
+    </a>
+    <a class="game" href="kjentefjes.html">
+      <span class="icon">📸</span>
+      <span class="name">KJENTE FJES</span>
+      <span class="desc">80 fjes – hvem drar du kjensel på? Skriv ned nummer og navn.</span>
+    </a>
+  </nav>
+</main>
+</body>
+</html>
