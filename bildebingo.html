@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bildebingo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #07080f;
+    --panel: #12152a;
+    --panel-edge: #232849;
+    --gold: #f6c945;
+    --gold-hot: #ffe08a;
+    --violet: #8b7cff;
+    --text: #f2f1ec;
+    --text-dim: #9a9cb5;
+    --display: "Anton", sans-serif;
+    --body: "Space Grotesk", sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--body);
+    background: var(--ink);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  #app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(8px, 1.2vh, 16px) clamp(10px, 1.4vw, 24px);
+    gap: clamp(6px, 1.2vh, 14px);
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-size: clamp(1.5rem, 3.2vh, 2.2rem);
+    letter-spacing: .06em;
+    color: var(--gold);
+    text-shadow: 0 0 24px rgba(246,201,69,.35);
+    font-weight: 400;
+  }
+  header .tagline {
+    color: var(--text-dim);
+    font-size: clamp(.75rem, 1.6vh, 1rem);
+  }
+  header .spacer { flex: 1 }
+  .chip {
+    font-family: var(--body);
+    font-size: .85rem;
+    color: var(--text-dim);
+    background: none;
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color .2s, border-color .2s;
+  }
+  .chip:hover { color: var(--gold); border-color: var(--gold) }
+  .chip.gold {
+    font-weight: 700;
+    background: linear-gradient(180deg, var(--gold-hot), var(--gold));
+    color: #241a02;
+    border-color: transparent;
+  }
+  .chip.gold:hover { box-shadow: 0 4px 18px rgba(246,201,69,.3) }
+
+  #grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: clamp(3px, .5vh, 8px);
+    min-height: 0;
+  }
+  .tile {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--panel-edge);
+    background: var(--panel);
+    cursor: pointer;
+    min-height: 0;
+  }
+  .tile img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 25%;
+  }
+  .tile .num {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    z-index: 2;
+    font-family: var(--display);
+    font-size: clamp(.6rem, 1.5vh, .95rem);
+    line-height: 1;
+    color: var(--gold);
+    background: rgba(4,5,11,.75);
+    border-radius: 6px;
+    padding: 3px 6px;
+  }
+  .tile .name {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 2;
+    display: none;
+    padding: 3px 4px;
+    font-size: clamp(.55rem, 1.4vh, .85rem);
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    color: var(--gold-hot);
+    background: rgba(4,5,11,.82);
+  }
+  body.fasit .tile .name { display: block }
+
+  /* ── Lightbox ───────────────────────────── */
+  #lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    background: rgba(4,5,11,.9);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+  }
+  #lightbox.open { display: flex }
+  #lightbox img {
+    max-width: 88vw;
+    max-height: 74vh;
+    border-radius: 14px;
+    box-shadow: 0 30px 90px rgba(0,0,0,.7);
+  }
+  #lightbox .lb-label {
+    font-family: var(--display);
+    font-size: clamp(1.2rem, 4vh, 2.4rem);
+    letter-spacing: .05em;
+    color: var(--gold);
+  }
+  #lightbox .lb-label:empty::before {
+    content: "?";
+    color: var(--text-dim);
+  }
+  #lightbox .lb-hint { color: var(--text-dim); font-size: .9rem }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="chip" href="./">‹ Alle spill</a>
+    <h1>BILDEBINGO</h1>
+    <span class="tagline">Hvem er dette? Skriv ned nummer og navn.</span>
+    <span class="spacer"></span>
+    <button class="chip gold" id="fasit-btn">Vis fasit</button>
+  </header>
+  <main id="grid"></main>
+</div>
+
+<div id="lightbox">
+  <img id="lb-img" alt="">
+  <div class="lb-label" id="lb-label"></div>
+  <div class="lb-hint">Trykk for å lukke · piltaster for neste/forrige</div>
+</div>
+
+<script>
+const NAMES = [
+  "Doffen", "Elvis Presley", "Carl Axel", "Khloé Kardashian", "Diddy",
+  "Aksel Hennie", "Ronaldinho", "Hans Magne", "Mette-Marit", "Camilla fra Paradise",
+  "Öde Nerdrum", "Charlie bit me", "Gordon Ramsay", "Vendela", "Bjørn Johan Muri",
+  "Sabrina Carpenter", "Malin (MGP jr)", "Svein Stang (Petter uteligger)", "Kevin Lauren", "Anne-Kath",
+  "Ole-Runar (MGP jr)", "Evam Kvam (Paradise Hotel)", "Erna Solberg", "Jan Eggum", "Alejandro Fuentes",
+  "Sturla Berg-Johansen", "Per Kristian Orderud", "Lene Alexandra", "Robert Stoltenberg", "Jonas Brothers",
+  "Robert Pattinson", "Willow Smith", "Elin Ørjasæter", "Trond-Viggo", "Colorline-Bjørn",
+  "Jonas Bergland", "Herman Dahl", "Chloe (Disney World)", "Margrethe fra Barne-TV", "Arne Brimi",
+  "Taylor Lautner", "Chand Torsvik", "Maddie McCann", "Jørn Hoel", "Sebastian Solberg",
+  "Idol-Mali", "Wenche Andersen", "Linus i Svingen", "Ndure", "Omar Bhatti",
+  "Maria Haukaas Mittet", "Stella Mwangi", "Barack Obama", "Janne Amble", "Kristian Valen",
+  "TCMN", "Trude Drevland", "Morten Harket", "The Rock", "Henrik Borg",
+  "Espen Nakstad", "Kristin Kirkemo", "Oddgeir", "Thomas Gjertsen", "TommyLife",
+  "Lido Lido", "Isac Elliot", "Mira Craig", "Antonio Nusa", "Paris Hilton",
+  "Liam Østvik", "Hasbulla", "Marstein", "Otto Jespersen", "Galvan Mehidi",
+  "Charter-Hilde", "Anne-Ma", "Erlend Elias", "Tor Fløysvik", "Nate",
+];
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+const grid = document.getElementById("grid");
+NAMES.forEach((name, i) => {
+  const num = String(i + 1).padStart(2, "0");
+  const el = document.createElement("div");
+  el.className = "tile";
+  el.innerHTML =
+    `<span class="num">${i + 1}</span>` +
+    `<img src="bilder/${num}.jpg" alt="Kjendis ${i + 1}" loading="lazy">` +
+    `<span class="name">${esc(name)}</span>`;
+  el.addEventListener("click", () => openLightbox(i));
+  grid.appendChild(el);
+});
+
+// ── Fasit toggle ───────────────────────────────────────────
+const fasitBtn = document.getElementById("fasit-btn");
+fasitBtn.addEventListener("click", () => {
+  document.body.classList.toggle("fasit");
+  const on = document.body.classList.contains("fasit");
+  fasitBtn.textContent = on ? "Skjul fasit" : "Vis fasit";
+  updateLightbox();
+});
+
+// ── Lightbox ───────────────────────────────────────────────
+const lightbox = document.getElementById("lightbox");
+let lbIndex = null;
+
+function openLightbox(i) {
+  lbIndex = i;
+  updateLightbox();
+  lightbox.classList.add("open");
+}
+function updateLightbox() {
+  if (lbIndex === null) return;
+  document.getElementById("lb-img").src = "bilder/" + String(lbIndex + 1).padStart(2, "0") + ".jpg";
+  document.getElementById("lb-label").textContent =
+    document.body.classList.contains("fasit") ? (lbIndex + 1) + ". " + NAMES[lbIndex] : "";
+}
+lightbox.addEventListener("click", () => {
+  lightbox.classList.remove("open");
+  lbIndex = null;
+});
+document.addEventListener("keydown", e => {
+  if (!lightbox.classList.contains("open")) return;
+  if (e.key === "Escape") { lightbox.classList.remove("open"); lbIndex = null; }
+  if (e.key === "ArrowRight") { lbIndex = (lbIndex + 1) % NAMES.length; updateLightbox(); }
+  if (e.key === "ArrowLeft") { lbIndex = (lbIndex + NAMES.length - 1) % NAMES.length; updateLightbox(); }
+});
+</script>
+</body>
+</html>
